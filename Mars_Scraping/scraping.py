@@ -1,6 +1,6 @@
 # Import Splinter, BeautifulSoup, and Pandas
 from splinter import Browser
-from bs4 import BeautifulSoup 
+from bs4 import BeautifulSoup as bs
 import pandas as pd
 import datetime as dt
 
@@ -17,7 +17,8 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        "hemi_list": scrape_hemi(browser)
     }
 
     # Stop webdriver and return data
@@ -37,7 +38,7 @@ def mars_news(browser):
 
     # Convert the browser html to a soup object and then quit the browser
     html = browser.html
-    news_soup = soup(html, 'html.parser')
+    news_soup = bs(html, 'html.parser')
 
     # Add try/except for error handling
     try:
@@ -69,7 +70,7 @@ def featured_image(browser):
 
     # Parse the resulting html with soup
     html = browser.html
-    img_soup = soup(html, 'html.parser')
+    img_soup = bs(html, 'html.parser')
 
     # Add try/except for error handling
     try:
@@ -99,6 +100,24 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
+
+def scrape_hemi(browser):
+    # Visit the mars nasa news site
+    url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+    browser.visit(url)
+
+    hemi_list = []
+    for i in range(4):
+        hemisphere = {}
+        browser.find_by_css('h3')[i].click()
+        soup = bs(browser.html, "html.parser")
+        src = soup.find('img', class_='wide-image')['src']
+        hemisphere['img_url'] = f'https://astrogeology.usgs.gov{src}'
+        hemisphere['title'] = soup.find('h2', class_='title').text
+        hemi_list.append(hemisphere)
+        browser.back()
+    return(hemi_list)
+
 
 if __name__ == "__main__":
 
